@@ -1,7 +1,8 @@
+  # Warranty Vault 🛡️
+  #### Your Personal Asset Management Dashboard!
 
-  # Asset Management Dashboard
+Warranty Vault helps manage assets by securely storing purchase details, receipts, and warranty information in one place. It keeps track of warranty periods, sends reminders before coverage expires, and makes it easy to retrieve proof of purchase when filing claims-saving time, reducing stress, and protecting the value of your investments.
 
-  This is a code bundle for Asset Management Dashboard. The original project is available at https://www.figma.com/design/hadm81uqHCWcXN061cW4yU/Asset-Management-Dashboard.
 
   ## Running the code
 
