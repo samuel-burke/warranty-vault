@@ -1,27 +1,19 @@
 import express from "express";
-import pkg from "pg";
+import cors from "cors";
 import dotenv from "dotenv";
+import routes from "./routes/index.js";
 
 dotenv.config();
-const { Pool } = pkg;
 
 const app = express();
+const PORT = process.env.PORT || 5050;
+
+app.use(cors());
 app.use(express.json());
+app.use("/uploads", express.static("uploads")); // serve uploaded files
 
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-});
+app.use("/", routes);
 
-// Test route to run SELECT NOW()
-app.get("/test-time", async (req, res) => {
-  try {
-    const result = await pool.query("SELECT NOW()");
-    res.json(result.rows[0]); // returns { now: '2025-09-01T...' }
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-const PORT = process.env.SERVER_PORT || 5050;
 app.listen(PORT, () => {
   console.log(`✅ Backend running on http://localhost:${PORT}`);
 });
