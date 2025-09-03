@@ -27,26 +27,29 @@ export const getAssetById = async (req, res) => {
   }
 };
 
-// CREATE asset
 /**
- *Example request body:
-  "name": "Keyboard",
-  "category": "Electronics",
-  "purchaseDate": "2025-09-02",
-  "warrantyPeriodMonths": 24,
-  "userId": 1
-  @param {*} req
- * @param {*} res 
+ * example request body:
+ * {
+ *   "name": "Laptop",
+ *   "category": "Electronics",
+ *   "purchaseDate": "2023-01-15",
+ *   "warrantyExpiration": "2025-01-15",
+ *  "status": "active",
+ *   "description": "Work laptop",
+ *   "userId": 1
+ * }            
  */
 export const createAsset = async (req, res) => {
-  const { name, category, purchaseDate, warrantyPeriodMonths, userId } = req.body;
+  const { name, category, purchaseDate, warrantyExpiration, status, description, userId } = req.body;
   try {
     const asset = await prisma.asset.create({
       data: {
         name,
         category,
         purchaseDate: purchaseDate ? new Date(purchaseDate) : null,
-        warrantyPeriodMonths,
+        warrantyExpiration : warrantyExpiration ? new Date(warrantyExpiration) : null,
+        status: status ? status : "active",
+        description: description ? description : "",
         user: { connect: { id: userId } }
       }
     });

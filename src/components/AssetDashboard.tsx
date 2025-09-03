@@ -1,11 +1,22 @@
 import { useState } from "react";
-import { Sidebar, SidebarContent, SidebarHeader, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarProvider, SidebarTrigger } from "./ui/sidebar";
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarHeader,
+  SidebarMenu,
+  SidebarMenuItem,
+  SidebarMenuButton,
+  SidebarProvider,
+  SidebarTrigger,
+  SidebarFooter,
+} from "./ui/sidebar";
 import { AssetGrid } from "./AssetGrid";
 import { AssetDetail } from "./AssetDetail";
 import { Package, FileText, Settings, Home, Plus } from "lucide-react";
 import { Button } from "./ui/button";
 import { AddAssetDialog } from "./AddAssetDialog";
-
+import { UserProfile } from "./UserProfile";
+import Logo from "../assets/logo.svg";
 export interface Asset {
   id: string;
   name: string;
@@ -16,6 +27,7 @@ export interface Asset {
   status: "active" | "maintenance" | "retired";
   image?: string;
   documents: Document[];
+  description?: string;
 }
 
 export interface Document {
@@ -27,6 +39,7 @@ export interface Document {
   fileSize: string;
 }
 
+const currentUser = 1;
 const mockAssets: Asset[] = [
   {
     id: "1",
@@ -43,7 +56,7 @@ const mockAssets: Asset[] = [
         type: "receipt",
         uploadDate: "2024-01-15",
         fileUrl: "/receipts/macbook-receipt.pdf",
-        fileSize: "245 KB"
+        fileSize: "245 KB",
       },
       {
         id: "d2",
@@ -51,9 +64,9 @@ const mockAssets: Asset[] = [
         type: "warranty",
         uploadDate: "2024-01-15",
         fileUrl: "/warranties/macbook-warranty.pdf",
-        fileSize: "178 KB"
-      }
-    ]
+        fileSize: "178 KB",
+      },
+    ],
   },
   {
     id: "2",
@@ -70,9 +83,9 @@ const mockAssets: Asset[] = [
         type: "receipt",
         uploadDate: "2023-11-20",
         fileUrl: "/receipts/chair-receipt.pdf",
-        fileSize: "156 KB"
-      }
-    ]
+        fileSize: "156 KB",
+      },
+    ],
   },
   {
     id: "3",
@@ -89,17 +102,19 @@ const mockAssets: Asset[] = [
         type: "manual",
         uploadDate: "2023-08-10",
         fileUrl: "/manuals/printer-manual.pdf",
-        fileSize: "2.1 MB"
-      }
-    ]
-  }
+        fileSize: "2.1 MB",
+      },
+    ],
+  },
 ];
 
 export function AssetDashboard() {
   const [selectedAsset, setSelectedAsset] = useState<Asset | null>(null);
   const [assets, setAssets] = useState<Asset[]>(mockAssets);
   const [showAddDialog, setShowAddDialog] = useState(false);
-  const [currentView, setCurrentView] = useState<"dashboard" | "settings">("dashboard");
+  const [currentView, setCurrentView] = useState<"dashboard" | "settings">(
+    "dashboard"
+  );
 
   const handleAssetClick = (asset: Asset) => {
     setSelectedAsset(asset);
@@ -109,32 +124,63 @@ export function AssetDashboard() {
     setSelectedAsset(null);
   };
 
-  const handleAddAsset = (newAsset: Omit<Asset, "id" | "documents">) => {
-    const asset: Asset = {
-      ...newAsset,
-      id: Date.now().toString(),
-      documents: []
+  const handleAddAsset = async (newAsset: Omit<Asset, "id" | "documents">) => {
+    const data = {
+      name: newAsset.name,
+      category: newAsset.category,
+      purchaseDate: newAsset.purchaseDate,
+      warrantyExpiration: newAsset.warrantyExpiration,
+      value: newAsset.value,
+      status: newAsset.status,
+      description: newAsset.description || "",
+      userId: currentUser,
     };
-    setAssets([...assets, asset]);
-    setShowAddDialog(false);
+    try {
+      console.log("Adding asset:", data);
+      const res = await fetch("http://localhost:5050/assets", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(data),
+      });
+
+      if (!res.ok) {
+        console.log(res.json);
+        throw new Error("Failed to create asset");
+      }
+
+      const createdAsset: Asset = await res.json();
+
+      // update state with server response
+      setAssets([...assets, createdAsset]);
+      setShowAddDialog(false);
+    } catch (err) {
+      alert("Could not add asset. Please try again.");
+    }
   };
 
-  const handleDocumentUpload = (assetId: string, document: Omit<Document, "id">) => {
+  const handleDocumentUpload = (
+    assetId: string,
+    document: Omit<Document, "id">
+  ) => {
     const newDocument: Document = {
       ...document,
-      id: Date.now().toString()
+      id: Date.now().toString(),
     };
 
-    setAssets(assets.map(asset => 
-      asset.id === assetId 
-        ? { ...asset, documents: [...asset.documents, newDocument] }
-        : asset
-    ));
+    setAssets(
+      assets.map((asset) =>
+        asset.id === assetId
+          ? { ...asset, documents: [...asset.documents, newDocument] }
+          : asset
+      )
+    );
 
     if (selectedAsset?.id === assetId) {
       setSelectedAsset({
         ...selectedAsset,
-        documents: [...selectedAsset.documents, newDocument]
+        documents: [...selectedAsset.documents, newDocument],
       });
     }
   };
@@ -144,12 +190,19 @@ export function AssetDashboard() {
       <div className="flex h-screen w-full">
         <Sidebar>
           <SidebarHeader className="p-4">
-            <h2 className="font-medium">Asset Manager</h2>
+            <h2 className="font-medium">
+              <img
+                src={Logo}
+                alt="Warranty Vault Logo"
+                className="h-12 mb-2 inline-block mr-2"
+              />
+              Warranty Vault
+            </h2>
           </SidebarHeader>
           <SidebarContent>
             <SidebarMenu>
               <SidebarMenuItem>
-                <SidebarMenuButton 
+                <SidebarMenuButton
                   onClick={() => setCurrentView("dashboard")}
                   isActive={currentView === "dashboard"}
                 >
@@ -160,7 +213,7 @@ export function AssetDashboard() {
               <SidebarMenuItem>
                 <SidebarMenuButton>
                   <Package className="h-4 w-4" />
-                  Assets ({assets.length})
+                  Assets ({0})
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
@@ -170,7 +223,7 @@ export function AssetDashboard() {
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
-                <SidebarMenuButton 
+                <SidebarMenuButton
                   onClick={() => setCurrentView("settings")}
                   isActive={currentView === "settings"}
                 >
@@ -180,6 +233,9 @@ export function AssetDashboard() {
               </SidebarMenuItem>
             </SidebarMenu>
           </SidebarContent>
+          <SidebarFooter className="p-4">
+            <UserProfile />
+          </SidebarFooter>
         </Sidebar>
 
         <div className="flex-1 flex flex-col">
@@ -187,7 +243,7 @@ export function AssetDashboard() {
             <div className="flex items-center gap-4">
               <SidebarTrigger />
               <h1 className="font-medium">
-                {selectedAsset ? selectedAsset.name : "Asset Management Dashboard"}
+                {selectedAsset ? selectedAsset.name : "Dashboard"}
               </h1>
             </div>
             {currentView === "dashboard" && !selectedAsset && (
@@ -202,10 +258,12 @@ export function AssetDashboard() {
             {currentView === "dashboard" && (
               <>
                 {selectedAsset ? (
-                  <AssetDetail 
-                    asset={selectedAsset} 
+                  <AssetDetail
+                    asset={selectedAsset}
                     onBack={handleBackToGrid}
-                    onDocumentUpload={(document) => handleDocumentUpload(selectedAsset.id, document)}
+                    onDocumentUpload={(document) =>
+                      handleDocumentUpload(selectedAsset.id, document)
+                    }
                   />
                 ) : (
                   <AssetGrid assets={assets} onAssetClick={handleAssetClick} />
@@ -215,14 +273,16 @@ export function AssetDashboard() {
             {currentView === "settings" && (
               <div className="p-6">
                 <h2 className="mb-4">Settings</h2>
-                <p className="text-muted-foreground">Settings panel coming soon...</p>
+                <p className="text-muted-foreground">
+                  Settings panel coming soon...
+                </p>
               </div>
             )}
           </main>
         </div>
       </div>
 
-      <AddAssetDialog 
+      <AddAssetDialog
         open={showAddDialog}
         onOpenChange={setShowAddDialog}
         onAddAsset={handleAddAsset}

@@ -7,10 +7,25 @@ generator client {
   provider = "prisma-client-js"
 }
 
+enum AssetStatus {
+  ACTIVE
+  EXPIRED
+  MAINTENANCE
+  RETIRED
+}
+
+enum DocType {
+  INVOICE
+  WARRANTY
+  MANUAL
+  OTHER
+}
+
 model User {
   id        Int      @id @default(autoincrement())
   email     String   @unique
   name      String?
+  avatar    String?
   createdAt DateTime @default(now())
   assets    Asset[]
 }
@@ -19,8 +34,10 @@ model Asset {
   id                   Int        @id @default(autoincrement())
   name                 String
   category             String?
-  purchaseDate         DateTime?
-  warrantyPeriodMonths Int?
+  purchaseDate         DateTime
+  warrantyExpiration   DateTime?
+  status               String
+  description          String?
   userId               Int
   user                 User      @relation(fields: [userId], references: [id])
   documents            Document[]
@@ -28,8 +45,10 @@ model Asset {
 
 model Document {
   id         Int      @id @default(autoincrement())
+  type       DocType
   fileName   String
   fileUrl    String
+  fileSize   Int
   uploadedAt DateTime @default(now())
   assetId    Int
   asset      Asset    @relation(fields: [assetId], references: [id])
