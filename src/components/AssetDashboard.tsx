@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Sidebar,
   SidebarContent,
@@ -17,6 +17,7 @@ import { Button } from "./ui/button";
 import { AddAssetDialog } from "./AddAssetDialog";
 import { UserProfile } from "./UserProfile";
 import Logo from "../assets/logo.svg";
+
 export interface Asset {
   id: string;
   name: string;
@@ -40,81 +41,29 @@ export interface Document {
 }
 
 const currentUser = 1;
-const mockAssets: Asset[] = [
-  {
-    id: "1",
-    name: "MacBook Pro 16-inch",
-    category: "Electronics",
-    purchaseDate: "2024-01-15",
-    value: 2499,
-    warrantyExpiration: "2026-01-15",
-    status: "active",
-    documents: [
-      {
-        id: "d1",
-        name: "Purchase Receipt",
-        type: "receipt",
-        uploadDate: "2024-01-15",
-        fileUrl: "/receipts/macbook-receipt.pdf",
-        fileSize: "245 KB",
-      },
-      {
-        id: "d2",
-        name: "Warranty Document",
-        type: "warranty",
-        uploadDate: "2024-01-15",
-        fileUrl: "/warranties/macbook-warranty.pdf",
-        fileSize: "178 KB",
-      },
-    ],
-  },
-  {
-    id: "2",
-    name: "Herman Miller Chair",
-    category: "Furniture",
-    purchaseDate: "2023-11-20",
-    value: 1200,
-    warrantyExpiration: "2035-11-20",
-    status: "active",
-    documents: [
-      {
-        id: "d3",
-        name: "Purchase Receipt",
-        type: "receipt",
-        uploadDate: "2023-11-20",
-        fileUrl: "/receipts/chair-receipt.pdf",
-        fileSize: "156 KB",
-      },
-    ],
-  },
-  {
-    id: "3",
-    name: "Industrial Printer",
-    category: "Office Equipment",
-    purchaseDate: "2023-08-10",
-    value: 800,
-    warrantyExpiration: "2024-08-10",
-    status: "maintenance",
-    documents: [
-      {
-        id: "d4",
-        name: "User Manual",
-        type: "manual",
-        uploadDate: "2023-08-10",
-        fileUrl: "/manuals/printer-manual.pdf",
-        fileSize: "2.1 MB",
-      },
-    ],
-  },
-];
 
 export function AssetDashboard() {
   const [selectedAsset, setSelectedAsset] = useState<Asset | null>(null);
-  const [assets, setAssets] = useState<Asset[]>(mockAssets);
+  const [assets, setAssets] = useState<Asset[]>([]);
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [currentView, setCurrentView] = useState<"dashboard" | "settings">(
     "dashboard"
   );
+
+  // fetch assets on mount
+  useEffect(() => {
+    const fetchAssets = async () => {
+      try {
+        const res = await fetch(`http://localhost:5050/assets`);
+        if (!res.ok) throw new Error("Failed to fetch assets");
+        const data: Asset[] = await res.json();
+        setAssets(data);
+      } catch (err) {
+        console.error("Error fetching assets:", err);
+      }
+    };
+    fetchAssets();
+  }, []);
 
   const handleAssetClick = (asset: Asset) => {
     setSelectedAsset(asset);
@@ -136,7 +85,6 @@ export function AssetDashboard() {
       userId: currentUser,
     };
     try {
-      console.log("Adding asset:", data);
       const res = await fetch("http://localhost:5050/assets", {
         method: "POST",
         headers: {
@@ -145,15 +93,12 @@ export function AssetDashboard() {
         body: JSON.stringify(data),
       });
 
-      if (!res.ok) {
-        console.log(res.json);
-        throw new Error("Failed to create asset");
-      }
+      if (!res.ok) throw new Error("Failed to create asset");
 
       const createdAsset: Asset = await res.json();
 
       // update state with server response
-      setAssets([...assets, createdAsset]);
+      setAssets((prev) => [...prev, createdAsset]);
       setShowAddDialog(false);
     } catch (err) {
       alert("Could not add asset. Please try again.");
@@ -169,8 +114,8 @@ export function AssetDashboard() {
       id: Date.now().toString(),
     };
 
-    setAssets(
-      assets.map((asset) =>
+    setAssets((prev) =>
+      prev.map((asset) =>
         asset.id === assetId
           ? { ...asset, documents: [...asset.documents, newDocument] }
           : asset
@@ -213,7 +158,7 @@ export function AssetDashboard() {
               <SidebarMenuItem>
                 <SidebarMenuButton>
                   <Package className="h-4 w-4" />
-                  Assets ({0})
+                  Assets ({assets.length})
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>

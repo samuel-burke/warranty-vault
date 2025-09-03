@@ -40,7 +40,7 @@ export const getAssetById = async (req, res) => {
  * }            
  */
 export const createAsset = async (req, res) => {
-  const { name, category, purchaseDate, warrantyExpiration, status, description, userId } = req.body;
+  const { name, category, purchaseDate, warrantyExpiration, status, value, description, userId } = req.body;
   try {
     const asset = await prisma.asset.create({
       data: {
@@ -49,6 +49,7 @@ export const createAsset = async (req, res) => {
         purchaseDate: purchaseDate ? new Date(purchaseDate) : null,
         warrantyExpiration : warrantyExpiration ? new Date(warrantyExpiration) : null,
         status: status ? status : "active",
+        value: value ? value : 0,
         description: description ? description : "",
         user: { connect: { id: userId } }
       }
@@ -62,7 +63,7 @@ export const createAsset = async (req, res) => {
 // UPDATE asset
 export const updateAsset = async (req, res) => {
   const id = parseInt(req.params.id);
-  const { name, category, purchaseDate, warrantyPeriodMonths } = req.body;
+  const { name, category, purchaseDate, warrantyExpiration, status, description, userId } = req.body;
   try {
     const asset = await prisma.asset.update({
       where: { id },
@@ -70,7 +71,9 @@ export const updateAsset = async (req, res) => {
         name,
         category,
         purchaseDate: purchaseDate ? new Date(purchaseDate) : null,
-        warrantyPeriodMonths
+        warrantyExpiration : warrantyExpiration ? new Date(warrantyExpiration) : null,
+        status: status ? status : "active",
+        description: description ? description : "",
       }
     });
     res.json(asset);
